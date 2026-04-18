@@ -38,4 +38,4 @@ client.on('interactionCreate', async interaction => {
     await command.execute(interaction);
 });
 
-client.login(config.token);
+client.login(process.env.TOKEN);
