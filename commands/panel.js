@@ -14,22 +14,60 @@ module.exports = {
             .setImage(config.panelImage)
             .setColor('#2b2d31');
 
-        const row1 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('rocket').setLabel('روكت ليق').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('fort').setLabel('فورت نايت').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('gta').setLabel('GTA V').setStyle(ButtonStyle.Primary)
+        const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
+const config = require('../config.json');
+
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('panel')
+        .setDescription('إظهار لوحة التذاكر'),
+
+    async execute(interaction) {
+
+        const embed = new EmbedBuilder()
+            .setTitle('🎫 نظام التذاكر | Ticket System')
+            .setDescription('اختر نوع التذكرة من القائمة بالأسفل\nChoose the ticket type from the menu below')
+            .setImage(config.panelImage)
+            .setColor('#2b2d31');
+
+        const menu = new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId('ticket_menu')
+                .setPlaceholder('اختر نوع التذكرة | Choose ticket type')
+                .addOptions([
+                    {
+                        label: 'روكت ليق | Rocket League',
+                        value: 'rocket'
+                    },
+                    {
+                        label: 'فورت نايت | Fortnite',
+                        value: 'fort'
+                    },
+                    {
+                        label: 'قراند | GTA V',
+                        value: 'gta'
+                    },
+                    {
+                        label: 'روبلوكس | Roblox',
+                        value: 'roblox'
+                    },
+                    {
+                        label: 'كول أوف ديوتي | Call of Duty',
+                        value: 'cod'
+                    },
+                    {
+                        label: 'شراء حساب | Account Purchase',
+                        value: 'buy'
+                    },
+                    {
+                        label: 'استفسار | Inquiry',
+                        value: 'ask'
+                    }
+                ])
         );
 
-        const row2 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('roblox').setLabel('روبلوكس').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('cod').setLabel('Call of Duty').setStyle(ButtonStyle.Primary)
-        );
-
-        const row3 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('buy').setLabel('شراء حساب').setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId('ask').setLabel('استفسار').setStyle(ButtonStyle.Secondary)
-        );
-
-        await interaction.reply({ embeds: [embed], components: [row1, row2, row3] });
+        await interaction.reply({ embeds: [embed], components: [menu] });
+    }
+};
     }
 };
