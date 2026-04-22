@@ -13,6 +13,8 @@ module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
 
+        const logsChannel = interaction.guild.channels.cache.get(config.logsChannel);
+
         // استقبال المنيو
         if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_menu') {
 
@@ -48,6 +50,22 @@ module.exports = {
                     }
                 ]
             });
+
+            // لوق فتح التذكرة
+            if (logsChannel) {
+                logsChannel.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle("📘 تم فتح تذكرة جديدة")
+                            .setDescription(
+                                `👤 **العميل:** <@${interaction.user.id}>\n` +
+                                `📂 **القسم:** ${type}\n` +
+                                `🔗 **رابط التذكرة:** ${channel.url}`
+                            )
+                            .setColor("Green")
+                    ]
+                });
+            }
 
             // أزرار التحكم
             const buttons = new ActionRowBuilder().addComponents(
@@ -86,24 +104,68 @@ module.exports = {
 
             // إغلاق التذكرة
             if (interaction.customId === 'close_ticket') {
+
+                if (logsChannel) {
+                    logsChannel.send({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("📕 تم إغلاق تذكرة")
+                                .setDescription(
+                                    `👤 **منفذ الإغلاق:** <@${interaction.user.id}>\n` +
+                                    `🔗 **رابط التذكرة:** ${interaction.channel.url}`
+                                )
+                                .setColor("Red")
+                        ]
+                    });
+                }
+
                 await interaction.reply({ content: "سيتم إغلاق التذكرة خلال 5 ثواني", ephemeral: true });
                 setTimeout(() => interaction.channel.delete(), 5000);
             }
 
-            // استدعاء الأونر
+            // استدعاء الأونر (DM)
             if (interaction.customId === 'call_owner') {
-                await interaction.reply({ content: `<@${config.roles.owner}> تم استدعاء الأونر`, ephemeral: false });
+
+                const ticketType = interaction.channel.parent?.name || "غير معروف";
+
+                const owner = await interaction.guild.members.fetch(config.roles.owner).catch(() => null);
+                if (owner) {
+                    await owner.send(
+                        `👑 **لديك استدعاء مهم من مستلم التذكرة**\n\n` +
+                        `🪪 **قسم التذكرة:** ${ticketType}\n` +
+                        `🔗 **رابط التذكرة:** ${interaction.channel.url}`
+                    ).catch(() => null);
+                }
+
+                if (logsChannel) {
+                    logsChannel.send(`👑 تم استدعاء الأونر بواسطة <@${interaction.user.id}> داخل ${interaction.channel.url}`);
+                }
+
+                await interaction.reply({ content: "📨 تم إرسال رسالة للأونر في الخاص", ephemeral: true });
             }
 
-            // استدعاء الدعم الفني
+            // استدعاء الدعم الفني (يرسل في روم مخصص)
             if (interaction.customId === 'call_support') {
-                await interaction.reply({ content: `<@${config.roles.support}> تم استدعاء الدعم الفني`, ephemeral: false });
+
+                const supportChannel = interaction.guild.channels.cache.get(config.supportCallChannel);
+                if (!supportChannel)
+                    return interaction.reply({ content: "روم استدعاء الدعم غير موجود", ephemeral: true });
+
+                await supportChannel.send(
+                    `<@&${config.roles.support}> لديك استدعاء داخل التذكرة\n` +
+                    `🔗 **رابط التذكرة:** ${interaction.channel.url}`
+                );
+
+                if (logsChannel) {
+                    logsChannel.send(`🛠️ تم استدعاء الدعم الفني بواسطة <@${interaction.user.id}> داخل ${interaction.channel.url}`);
+                }
+
+                await interaction.reply({ content: "📨 تم إرسال الاستدعاء في روم الدعم الفني", ephemeral: true });
             }
 
             // استدعاء العميل (DM)
             if (interaction.customId === 'call_client') {
 
-                // استخراج صاحب التذكرة من الصلاحيات
                 const ticketOwner = interaction.channel.permissionOverwrites.cache
                     .find(p => p.allow.has(PermissionFlagsBits.SendMessages) && p.type === 1)?.id;
 
@@ -114,17 +176,17 @@ module.exports = {
                 if (!user)
                     return interaction.reply({ content: "لا يمكن إرسال رسالة للعميل", ephemeral: true });
 
-                // تحديد القسم من اسم الكاتيجوري
                 const ticketType = interaction.channel.parent?.name || "غير معروف";
 
-                // إرسال رسالة خاصة للعميل
-                await user.send({
-                    content:
-                        `📩 **لديك استدعاء من الطاقم!**\n\n` +
-                        `🪪 **قسم التذكرة:** ${ticketType}\n` +
-                        `🔗 **رابط التذكرة:** ${interaction.channel.url}\n\n` +
-                        `الرجاء الدخول للتذكرة والرد على الطاقم.`
-                }).catch(() => null);
+                await user.send(
+                    `📩 **لديك استدعاء من الطاقم!**\n\n` +
+                    `🪪 **قسم التذكرة:** ${ticketType}\n` +
+                    `🔗 **رابط التذكرة:** ${interaction.channel.url}`
+                ).catch(() => null);
+
+                if (logsChannel) {
+                    logsChannel.send(`📩 تم استدعاء العميل بواسطة <@${interaction.user.id}> داخل ${interaction.channel.url}`);
+                }
 
                 await interaction.reply({ content: "📨 تم إرسال رسالة للعميل في الخاص", ephemeral: true });
             }
