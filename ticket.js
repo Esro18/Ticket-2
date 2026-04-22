@@ -1,17 +1,22 @@
-const { Events, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { 
+    Events, 
+    PermissionFlagsBits, 
+    EmbedBuilder, 
+    ActionRowBuilder, 
+    ButtonBuilder, 
+    ButtonStyle 
+} = require('discord.js');
+
 const config = require('./config.json');
 
 module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
 
-        // استقبال المنيو بدل الأزرار
-        if (!interaction.isStringSelectMenu()) return;
+        // استقبال المنيو
+        if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_menu') {
 
-        // المنيو الخاصة بالتذاكر
-        if (interaction.customId === 'ticket_menu') {
-
-            const type = interaction.values[0]; // القيمة المختارة مثل rocket أو fort
+            const type = interaction.values[0];
 
             const categoryId = config.ticketCategories[type];
             const staffRole = config.roles[type];
@@ -44,13 +49,57 @@ module.exports = {
                 ]
             });
 
+            // أزرار التحكم
+            const buttons = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('close_ticket')
+                    .setLabel('🔒 إغلاق التذكرة')
+                    .setStyle(ButtonStyle.Danger),
+
+                new ButtonBuilder()
+                    .setCustomId('call_owner')
+                    .setLabel('👑 استدعاء الأونر')
+                    .setStyle(ButtonStyle.Primary),
+
+                new ButtonBuilder()
+                    .setCustomId('call_support')
+                    .setLabel('🛠️ استدعاء الدعم الفني')
+                    .setStyle(ButtonStyle.Success),
+
+                new ButtonBuilder()
+                    .setCustomId('call_client')
+                    .setLabel('📩 استدعاء العميل')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+
             const embed = new EmbedBuilder()
                 .setTitle("🎫 تم فتح تذكرتك")
                 .setDescription("سيتم خدمتك قريباً من قبل الطاقم المختص")
                 .setColor("#2b2d31");
 
-            await channel.send({ content: `<@${interaction.user.id}>`, embeds: [embed] });
+            await channel.send({ content: `<@${interaction.user.id}>`, embeds: [embed], components: [buttons] });
             await interaction.reply({ content: "تم إنشاء تذكرتك بنجاح", ephemeral: true });
+        }
+
+        // استقبال أزرار التحكم
+        if (interaction.isButton()) {
+
+            if (interaction.customId === 'close_ticket') {
+                await interaction.reply({ content: "سيتم إغلاق التذكرة خلال 5 ثواني", ephemeral: true });
+                setTimeout(() => interaction.channel.delete(), 5000);
+            }
+
+            if (interaction.customId === 'call_owner') {
+                await interaction.reply({ content: `<@${config.roles.owner}> تم استدعاء الأونر`, ephemeral: false });
+            }
+
+            if (interaction.customId === 'call_support') {
+                await interaction.reply({ content: `<@${config.roles.support}> تم استدعاء الدعم الفني`, ephemeral: false });
+            }
+
+            if (interaction.customId === 'call_client') {
+                await interaction.reply({ content: `<@${interaction.channel.topic}> تم استدعاء العميل`, ephemeral: false });
+            }
         }
     }
 };
