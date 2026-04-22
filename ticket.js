@@ -84,21 +84,49 @@ module.exports = {
         // استقبال أزرار التحكم
         if (interaction.isButton()) {
 
+            // إغلاق التذكرة
             if (interaction.customId === 'close_ticket') {
                 await interaction.reply({ content: "سيتم إغلاق التذكرة خلال 5 ثواني", ephemeral: true });
                 setTimeout(() => interaction.channel.delete(), 5000);
             }
 
+            // استدعاء الأونر
             if (interaction.customId === 'call_owner') {
                 await interaction.reply({ content: `<@${config.roles.owner}> تم استدعاء الأونر`, ephemeral: false });
             }
 
+            // استدعاء الدعم الفني
             if (interaction.customId === 'call_support') {
                 await interaction.reply({ content: `<@${config.roles.support}> تم استدعاء الدعم الفني`, ephemeral: false });
             }
 
+            // استدعاء العميل (DM)
             if (interaction.customId === 'call_client') {
-                await interaction.reply({ content: `<@${interaction.channel.topic}> تم استدعاء العميل`, ephemeral: false });
+
+                // استخراج صاحب التذكرة من الصلاحيات
+                const ticketOwner = interaction.channel.permissionOverwrites.cache
+                    .find(p => p.allow.has(PermissionFlagsBits.SendMessages) && p.type === 1)?.id;
+
+                if (!ticketOwner)
+                    return interaction.reply({ content: "لم يتم العثور على صاحب التذكرة", ephemeral: true });
+
+                const user = await interaction.guild.members.fetch(ticketOwner).catch(() => null);
+                if (!user)
+                    return interaction.reply({ content: "لا يمكن إرسال رسالة للعميل", ephemeral: true });
+
+                // تحديد القسم من اسم الكاتيجوري
+                const ticketType = interaction.channel.parent?.name || "غير معروف";
+
+                // إرسال رسالة خاصة للعميل
+                await user.send({
+                    content:
+                        `📩 **لديك استدعاء من الطاقم!**\n\n` +
+                        `🪪 **قسم التذكرة:** ${ticketType}\n` +
+                        `🔗 **رابط التذكرة:** ${interaction.channel.url}\n\n` +
+                        `الرجاء الدخول للتذكرة والرد على الطاقم.`
+                }).catch(() => null);
+
+                await interaction.reply({ content: "📨 تم إرسال رسالة للعميل في الخاص", ephemeral: true });
             }
         }
     }
