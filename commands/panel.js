@@ -34,7 +34,7 @@ module.exports = {
                         value: 'fort'
                     },
                     {
-                        label: 'جاتا ٥ | GTA V',
+                        label: 'قراند 5 | GTA V',
                         value: 'gta'
                     },
                     {
