@@ -5,18 +5,19 @@ module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
 
-        if (!interaction.isButton()) return;
+        // استقبال المنيو بدل الأزرار
+        if (!interaction.isStringSelectMenu()) return;
 
-        // زر فتح التذكرة
-        const types = ["rocket", "fort", "gta", "roblox", "cod", "buy", "ask"];
+        // المنيو الخاصة بالتذاكر
+        if (interaction.customId === 'ticket_menu') {
 
-        if (types.includes(interaction.customId)) {
+            const type = interaction.values[0]; // القيمة المختارة مثل rocket أو fort
 
-            const categoryId = config.ticketCategories[interaction.customId];
-            const staffRole = config.roles[interaction.customId];
+            const categoryId = config.ticketCategories[type];
+            const staffRole = config.roles[type];
             const controlRole = config.roles.control;
 
-            if (!categoryId) 
+            if (!categoryId)
                 return interaction.reply({ content: "كاتيجوري هذا القسم غير موجود في config.json", ephemeral: true });
 
             const channel = await interaction.guild.channels.create({
