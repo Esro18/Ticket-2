@@ -123,25 +123,39 @@ module.exports = {
                 setTimeout(() => interaction.channel.delete(), 5000);
             }
 
-            // استدعاء الأونر (DM)
+            // استدعاء الأونر (DM) — تم إصلاحه هنا
             if (interaction.customId === 'call_owner') {
 
                 const ticketType = interaction.channel.parent?.name || "غير معروف";
-
                 const owner = await interaction.guild.members.fetch(config.roles.owner).catch(() => null);
+
+                let sent = false;
+
                 if (owner) {
                     await owner.send(
-                        `👑 **لديك استدعاء مهم من مستلم التذكرة**\n\n` +
-                        `🪪 **قسم التذكرة:** ${ticketType}\n` +
-                        `🔗 **رابط التذكرة:** ${interaction.channel.url}`
-                    ).catch(() => null);
+                        `👑 **تنبيه مهم!**\n` +
+                        `تم استدعاؤك من قبل أحد أفراد الطاقم داخل تذكرة.\n\n` +
+                        `📂 **قسم التذكرة:** ${ticketType}\n` +
+                        `🔗 **رابط التذكرة:** ${interaction.channel.url}\n\n` +
+                        `⚠️ يرجى الدخول فورًا.`
+                    ).then(() => sent = true)
+                     .catch(() => sent = false);
                 }
 
                 if (logsChannel) {
-                    logsChannel.send(`👑 تم استدعاء الأونر بواسطة <@${interaction.user.id}> داخل ${interaction.channel.url}`);
+                    logsChannel.send(
+                        sent
+                        ? `👑 تم إرسال استدعاء للأونر بواسطة <@${interaction.user.id}> داخل ${interaction.channel.url}`
+                        : `❌ فشل إرسال رسالة للأونر — قد يكون الخاص مقفل`
+                    );
                 }
 
-                await interaction.reply({ content: "📨 تم إرسال رسالة للأونر في الخاص", ephemeral: true });
+                await interaction.reply({
+                    content: sent
+                        ? "📨 تم إرسال رسالة للأونر في الخاص"
+                        : "❌ لم يتمكن البوت من إرسال رسالة للأونر — قد يكون الخاص مقفل",
+                    ephemeral: true
+                });
             }
 
             // استدعاء الدعم الفني (يرسل في روم مخصص)
