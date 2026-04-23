@@ -31,7 +31,7 @@ module.exports = {
                 name: `ticket-${interaction.user.username}`,
                 type: 0,
                 parent: categoryId,
-                topic: `OWNER:${interaction.user.id}`, // مهم لاستخراج صاحب التذكرة
+                topic: `OWNER:${interaction.user.id}`,
                 permissionOverwrites: [
                     {
                         id: interaction.guild.id,
@@ -166,7 +166,7 @@ module.exports = {
                 });
             }
 
-            // استدعاء الأونر (DM)
+            // استدعاء الأونر (DM) — النسخة القصيرة المضمونة
             if (interaction.customId === 'call_owner') {
 
                 const ticketType = interaction.channel.parent?.name || "غير معروف";
@@ -176,11 +176,9 @@ module.exports = {
 
                 if (owner) {
                     await owner.send(
-                        `👑 **تنبيه مهم!**\n` +
-                        `تم استدعاؤك من قبل أحد أفراد الطاقم داخل تذكرة.\n\n` +
-                        `📂 **قسم التذكرة:** ${ticketType}\n` +
-                        `🔗 **رابط التذكرة:** ${interaction.channel.url}\n\n` +
-                        `⚠️ يرجى الدخول فورًا.`
+                        `👑 تم طلب حضورك داخل التذكرة.\n\n` +
+                        `📂 القسم: ${ticketType}\n` +
+                        `🔗 الرابط: ${interaction.channel.url}`
                     ).then(() => sent = true)
                      .catch(() => sent = false);
                 }
@@ -189,19 +187,19 @@ module.exports = {
                     logsChannel.send(
                         sent
                         ? `👑 تم إرسال استدعاء للأونر بواسطة <@${interaction.user.id}> داخل ${interaction.channel.url}`
-                        : `❌ فشل إرسال رسالة للأونر — قد يكون الخاص مقفل`
+                        : `❌ فشل إرسال رسالة للأونر — الخاص مقفل أو الرسالة مرفوضة`
                     );
                 }
 
                 await interaction.reply({
                     content: sent
                         ? "📨 تم إرسال رسالة للأونر في الخاص"
-                        : "❌ لم يتمكن البوت من إرسال رسالة للأونر — قد يكون الخاص مقفل",
+                        : "❌ لم يتمكن البوت من إرسال رسالة للأونر",
                     ephemeral: true
                 });
             }
 
-            // استدعاء الدعم الفني (يرسل في روم مخصص)
+            // استدعاء الدعم الفني
             if (interaction.customId === 'call_support') {
 
                 const supportChannel = interaction.guild.channels.cache.get(config.supportCallChannel);
@@ -220,7 +218,7 @@ module.exports = {
                 await interaction.reply({ content: "📨 تم إرسال الاستدعاء في روم الدعم الفني", ephemeral: true });
             }
 
-            // استدعاء العميل (DM)
+            // استدعاء العميل
             if (interaction.customId === 'call_client') {
 
                 const ticketOwner = interaction.channel.topic?.split("OWNER:")[1]?.split(" ")[0];
@@ -235,9 +233,9 @@ module.exports = {
                 const ticketType = interaction.channel.parent?.name || "غير معروف";
 
                 await user.send(
-                    `📩 **لديك استدعاء من الطاقم!**\n\n` +
-                    `🪪 **قسم التذكرة:** ${ticketType}\n` +
-                    `🔗 **رابط التذكرة:** ${interaction.channel.url}`
+                    `📩 لديك استدعاء من الطاقم.\n\n` +
+                    `📂 القسم: ${ticketType}\n` +
+                    `🔗 الرابط: ${interaction.channel.url}`
                 ).catch(() => null);
 
                 if (logsChannel) {
