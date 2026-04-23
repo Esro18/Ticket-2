@@ -2,6 +2,7 @@
   "token": "",
   "clientId": "1494650387976687657",
   "guildId": "1401252234830020698",
+  "supportCallChannel":"1496658178669150219",
   "panelImage": "https://media.discordapp.net/attachments/1413647729099538513/1494659197156200539/IMG_server.png?ex=69e3695a&is=69e217da&hm=ea13970f1b83f12747842d6c98c09a2adc9751ba0bf9c72869392edaee36d02b&=&format=webp&quality=lossless&width=889&height=590",
   "ticketCategories": {
     "rocket": "1494654652438806699",
@@ -22,8 +23,7 @@
     "ask": "1494658132637646960",
     "control": "1494655853616173248",
     "owner": "1402129746581524581",
-    "supportcoowner":"1420667767941632000",
-    "supportCallChannel":"1496658178669150219"
+    "supportcoowner":"1420667767941632000"
   },
   "logsChannel": "1494656177206857868"
 }

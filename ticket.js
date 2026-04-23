@@ -31,6 +31,7 @@ module.exports = {
                 name: `ticket-${interaction.user.username}`,
                 type: 0,
                 parent: categoryId,
+                topic: `OWNER:${interaction.user.id}`, // مهم لاستخراج صاحب التذكرة
                 permissionOverwrites: [
                     {
                         id: interaction.guild.id,
@@ -70,9 +71,9 @@ module.exports = {
             // أزرار التحكم
             const buttons = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setCustomId('close_ticket')
-                    .setLabel('🔒 إغلاق التذكرة')
-                    .setStyle(ButtonStyle.Danger),
+                    .setCustomId('take_ticket')
+                    .setLabel('🟢 استلام التذكرة')
+                    .setStyle(ButtonStyle.Success),
 
                 new ButtonBuilder()
                     .setCustomId('call_owner')
@@ -87,7 +88,12 @@ module.exports = {
                 new ButtonBuilder()
                     .setCustomId('call_client')
                     .setLabel('📩 استدعاء العميل')
-                    .setStyle(ButtonStyle.Secondary)
+                    .setStyle(ButtonStyle.Secondary),
+
+                new ButtonBuilder()
+                    .setCustomId('close_ticket')
+                    .setLabel('🔒 إغلاق التذكرة')
+                    .setStyle(ButtonStyle.Danger)
             );
 
             const embed = new EmbedBuilder()
@@ -102,28 +108,65 @@ module.exports = {
         // استقبال أزرار التحكم
         if (interaction.isButton()) {
 
-            // إغلاق التذكرة
-            if (interaction.customId === 'close_ticket') {
+            // زر استلام التذكرة
+            if (interaction.customId === 'take_ticket') {
 
-                if (logsChannel) {
-                    logsChannel.send({
-                        embeds: [
-                            new EmbedBuilder()
-                                .setTitle("📕 تم إغلاق تذكرة")
-                                .setDescription(
-                                    `👤 **منفذ الإغلاق:** <@${interaction.user.id}>\n` +
-                                    `🔗 **رابط التذكرة:** ${interaction.channel.url}`
-                                )
-                                .setColor("Red")
-                        ]
+                const controlRole = config.roles.control;
+
+                if (!interaction.member.roles.cache.has(controlRole)) {
+                    return interaction.reply({
+                        content: "❌ ليس لديك صلاحية استلام التذكرة.",
+                        ephemeral: true
                     });
                 }
 
-                await interaction.reply({ content: "سيتم إغلاق التذكرة خلال 5 ثواني", ephemeral: true });
-                setTimeout(() => interaction.channel.delete(), 5000);
+                if (interaction.channel.topic.includes("TAKEN")) {
+                    return interaction.reply({
+                        content: "⚠️ تم استلام التذكرة مسبقًا.",
+                        ephemeral: true
+                    });
+                }
+
+                await interaction.channel.setTopic(interaction.channel.topic + " | TAKEN");
+
+                await interaction.reply({
+                    content: `🟢 **تم استلام التذكرة بواسطة <@${interaction.user.id}>**`,
+                });
+
+                if (logsChannel) {
+                    logsChannel.send(
+                        `🟢 **تم استلام التذكرة** بواسطة <@${interaction.user.id}> داخل ${interaction.channel.url}`
+                    );
+                }
+
+                const updatedButtons = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('call_owner')
+                        .setLabel('👑 استدعاء الأونر')
+                        .setStyle(ButtonStyle.Primary),
+
+                    new ButtonBuilder()
+                        .setCustomId('call_support')
+                        .setLabel('🛠️ استدعاء الدعم الفني')
+                        .setStyle(ButtonStyle.Success),
+
+                    new ButtonBuilder()
+                        .setCustomId('call_client')
+                        .setLabel('📩 استدعاء العميل')
+                        .setStyle(ButtonStyle.Secondary),
+
+                    new ButtonBuilder()
+                        .setCustomId('close_ticket')
+                        .setLabel('🔒 إغلاق التذكرة')
+                        .setStyle(ButtonStyle.Danger)
+                );
+
+                await interaction.message.edit({
+                    components: [updatedButtons]
+                });
             }
 
-            // استدعاء الأونر (DM) — تم إصلاحه هنا
+            // استدعاء الأونر (DM)
             if (interaction.customId === 'call_owner') {
 
                 const ticketType = interaction.channel.parent?.name || "غير معروف";
@@ -180,8 +223,7 @@ module.exports = {
             // استدعاء العميل (DM)
             if (interaction.customId === 'call_client') {
 
-                const ticketOwner = interaction.channel.permissionOverwrites.cache
-                    .find(p => p.allow.has(PermissionFlagsBits.SendMessages) && p.type === 1)?.id;
+                const ticketOwner = interaction.channel.topic?.split("OWNER:")[1]?.split(" ")[0];
 
                 if (!ticketOwner)
                     return interaction.reply({ content: "لم يتم العثور على صاحب التذكرة", ephemeral: true });
@@ -203,6 +245,27 @@ module.exports = {
                 }
 
                 await interaction.reply({ content: "📨 تم إرسال رسالة للعميل في الخاص", ephemeral: true });
+            }
+
+            // إغلاق التذكرة
+            if (interaction.customId === 'close_ticket') {
+
+                if (logsChannel) {
+                    logsChannel.send({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("📕 تم إغلاق تذكرة")
+                                .setDescription(
+                                    `👤 **منفذ الإغلاق:** <@${interaction.user.id}>\n` +
+                                    `🔗 **رابط التذكرة:** ${interaction.channel.url}`
+                                )
+                                .setColor("Red")
+                        ]
+                    });
+                }
+
+                await interaction.reply({ content: "سيتم إغلاق التذكرة خلال 5 ثواني", ephemeral: true });
+                setTimeout(() => interaction.channel.delete(), 5000);
             }
         }
     }
